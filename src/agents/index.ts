@@ -13,7 +13,8 @@ export interface Agent {
   getInstallPath: () => string;
 }
 
-// Install paths per agent
+// Detection checks home directory (is the agent installed on this system?)
+// Install paths are project-level (where the agent reads skills from)
 export const agents: Agent[] = [
   {
     name: 'Claude Code',
@@ -26,14 +27,14 @@ export const agents: Agent[] = [
         return false;
       }
     },
-    getInstallPath: () => path.join(os.homedir(), '.claude', 'skills'),
+    getInstallPath: () => path.join(process.cwd(), '.claude', 'skills'),
   },
   {
     name: 'Cursor',
     id: 'cursor',
     detect: async () => {
       try {
-        await fs.access(path.join(process.cwd(), '.cursor'));
+        await fs.access(path.join(os.homedir(), '.cursor'));
         return true;
       } catch {
         return false;
@@ -46,7 +47,13 @@ export const agents: Agent[] = [
     id: 'vscode',
     detect: async () => {
       try {
-        await fs.access(path.join(process.cwd(), '.github'));
+        // Check VS Code config directory
+        const vscodeDir = process.platform === 'win32'
+          ? path.join(os.homedir(), 'AppData', 'Roaming', 'Code')
+          : process.platform === 'darwin'
+            ? path.join(os.homedir(), 'Library', 'Application Support', 'Code')
+            : path.join(os.homedir(), '.config', 'Code');
+        await fs.access(vscodeDir);
         return true;
       } catch {
         return false;
@@ -62,10 +69,15 @@ export const agents: Agent[] = [
         await fs.access(path.join(os.homedir(), '.codex'));
         return true;
       } catch {
-        return false;
+        try {
+          await fs.access(path.join(os.homedir(), '.agents'));
+          return true;
+        } catch {
+          return false;
+        }
       }
     },
-    getInstallPath: () => path.join(os.homedir(), '.codex', 'skills'),
+    getInstallPath: () => path.join(process.cwd(), '.agents', 'skills'),
   },
   {
     name: 'Goose',
@@ -78,20 +90,20 @@ export const agents: Agent[] = [
         return false;
       }
     },
-    getInstallPath: () => path.join(os.homedir(), '.config', 'goose', 'skills'),
+    getInstallPath: () => path.join(process.cwd(), '.goose', 'skills'),
   },
   {
     name: 'OpenCode',
     id: 'opencode',
     detect: async () => {
       try {
-        await fs.access(path.join(os.homedir(), '.opencode'));
+        await fs.access(path.join(os.homedir(), '.config', 'opencode'));
         return true;
       } catch {
         return false;
       }
     },
-    getInstallPath: () => path.join(os.homedir(), '.opencode', 'skill'),
+    getInstallPath: () => path.join(process.cwd(), '.opencode', 'skills'),
   },
   {
     name: 'Gemini CLI',
@@ -104,7 +116,7 @@ export const agents: Agent[] = [
         return false;
       }
     },
-    getInstallPath: () => path.join(os.homedir(), '.gemini', 'skills'),
+    getInstallPath: () => path.join(process.cwd(), '.gemini', 'skills'),
   },
   {
     name: 'Letta',
@@ -117,20 +129,25 @@ export const agents: Agent[] = [
         return false;
       }
     },
-    getInstallPath: () => path.join(os.homedir(), '.letta', 'skills'),
+    getInstallPath: () => path.join(process.cwd(), '.skills'),
   },
   {
     name: 'Amp',
     id: 'amp',
     detect: async () => {
       try {
-        await fs.access(path.join(os.homedir(), '.amp'));
+        await fs.access(path.join(os.homedir(), '.config', 'amp'));
         return true;
       } catch {
-        return false;
+        try {
+          await fs.access(path.join(os.homedir(), '.config', 'agents'));
+          return true;
+        } catch {
+          return false;
+        }
       }
     },
-    getInstallPath: () => path.join(os.homedir(), '.amp', 'skills'),
+    getInstallPath: () => path.join(process.cwd(), '.agents', 'skills'),
   },
 ];
 

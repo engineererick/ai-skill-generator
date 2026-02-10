@@ -33,23 +33,10 @@ export async function installCommand(skillPath: string, options: InstallOptions)
       agentsToInstall = options.agent;
     } else {
       // Interactive mode
-      console.log(chalk.gray('Detected agents:\n'));
+      const agentList = installedAgents.map(a => a.name).join(', ');
 
-      for (const agent of installedAgents) {
-        console.log(chalk.green(`  ${agent.name}`));
-      }
-
-      const notInstalled = detected.filter(a => !a.installed);
-      if (notInstalled.length > 0) {
-        console.log();
-        for (const agent of notInstalled) {
-          console.log(chalk.gray(`  ${agent.name} (not installed)`));
-        }
-      }
-
-      console.log();
       const installAll = await confirm({
-        message: 'Install to all detected agents?',
+        message: `Install to all detected agents? (${agentList})`,
         default: true,
       });
 

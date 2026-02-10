@@ -335,13 +335,10 @@ export async function initCommand(options: InitOptions) {
         } else if (options.nonInteractive) {
           agentsToInstall = installedAgents.map(a => a.id);
         } else {
-          console.log(chalk.cyan('Detected AI agents:\n'));
-          for (const agent of installedAgents) {
-            console.log(chalk.green(`  ${agent.name}`));
-          }
+          const agentList = installedAgents.map(a => a.name).join(', ');
 
           const installAll = await confirm({
-            message: '\nInstall to all agents?',
+            message: `Install to all detected agents? (${agentList})`,
             default: true,
           });
 
