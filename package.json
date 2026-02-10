@@ -1,0 +1,69 @@
+{
+  "name": "ai-skill-generator",
+  "version": "1.0.0",
+  "description": "AI assistant skill generator. Create, validate, and package skills with configurable templates.",
+  "main": "dist/index.js",
+  "bin": {
+    "skill-gen": "dist/cli.js",
+    "sg": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "cli": "node dist/cli.js",
+    "watch": "tsc --watch",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run clean && npm run build",
+    "test": "npm run build && node tests/run-test.mjs --all",
+    "test:all": "node tests/run-test.mjs --all",
+    "test:frontend": "node tests/run-test.mjs test1-basic-frontend",
+    "test:microservice": "node tests/run-test.mjs test2-microservice",
+    "test:library": "node tests/run-test.mjs test3-library",
+    "test:context": "node tests/run-test.mjs test4-with-context",
+    "test:preset": "node tests/run-test.mjs test5-preset"
+  },
+  "keywords": [
+    "skill",
+    "generator",
+    "ai",
+    "assistant",
+    "claude",
+    "gpt",
+    "cli",
+    "template"
+  ],
+  "author": "engineererick",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/engineererick/ai-skill-generator.git"
+  },
+  "homepage": "https://github.com/engineererick/ai-skill-generator",
+  "bugs": {
+    "url": "https://github.com/engineererick/ai-skill-generator/issues"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.2.0",
+    "commander": "^12.1.0",
+    "js-yaml": "^4.1.0",
+    "adm-zip": "^0.5.16",
+    "chalk": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/adm-zip": "^0.5.6",
+    "@types/node": "^22.10.0",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

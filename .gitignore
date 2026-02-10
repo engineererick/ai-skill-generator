@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.tgz
+.env
+.env.*
+CLAUDE.md
+.claude/
+tests/**/output/
+tests/**/packages/
