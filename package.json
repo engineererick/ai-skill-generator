@@ -1,6 +1,6 @@
 {
   "name": "ai-skill-generator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI assistant skill generator. Create, validate, and package skills with configurable templates.",
   "main": "dist/index.js",
   "bin": {
