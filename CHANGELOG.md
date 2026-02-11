@@ -2,6 +2,20 @@
 
 All notable changes to the AI Skill Generator project.
 
+## [1.0.2] - 2026-02-11
+
+### Added
+- **Dry run mode** (`--dry-run`): Preview generated files with sizes without writing to disk
+
+### Fixed
+- **Agent install paths**: Skills now install to project-level directories where agents actually read them (was incorrectly using home directory paths)
+- **Prompt repetition bug**: Fixed interactive agent selection prompt duplicating output due to console.log re-rendering
+
+### Changed
+- Agent install paths are now project-level (e.g., `.claude/skills/` instead of `~/.claude/skills/`)
+- Agent selection prompt now shows agent names inline instead of separate console output
+- Updated USAGE_GUIDE with correct agent paths and test commands
+
 ## [1.0.0] - 2026-02-09
 
 ### Added

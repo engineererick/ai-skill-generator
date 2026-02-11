@@ -7,6 +7,7 @@ Create, validate, and package skills for AI coding assistants (Claude, Cursor, C
 - **4 Configurable templates**: Frontend, Microservice, Library, Basic
 - **Built-in presets**: Ready-to-use stacks
 - **Interactive mode**: Guided wizard with smart prompts
+- **Dry run mode**: Preview generated files without writing to disk
 - **Automated mode**: Flags for CI/CD pipelines
 - **External context**: Include .md, .txt files as references
 - **Validation**: Automatically verify SKILL.md structure
@@ -60,6 +61,35 @@ skill-gen init \
   --with-references \
   --with-scripts \
   --non-interactive
+```
+
+### Preview Before Creating (Dry Run)
+
+```bash
+skill-gen init \
+  --name my-api \
+  --type microservice \
+  --desc "Payments API" \
+  --with-references \
+  --with-scripts \
+  --non-interactive \
+  --dry-run
+```
+
+Output:
+```
+Preview (dry run):
+
+  my-api/
+  ├── SKILL.md (1.1 KB)
+  ├── references/API.md (349 B)
+  ├── references/ARCHITECTURE.md (337 B)
+  ├── scripts/seed.ts (274 B)
+  └── scripts/example.ts (123 B)
+
+  5 file(s), 2.1 KB total
+
+No files were written (dry-run mode)
 ```
 
 ### With External Context
@@ -140,6 +170,7 @@ Options:
   --install                   Install to AI agents after creation
   --install-agent <agents>    Install to specific agents only
   --non-interactive           Automated mode (requires flags)
+  --dry-run                   Preview files without writing to disk
 ```
 
 ## External Context

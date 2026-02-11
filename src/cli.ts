@@ -28,6 +28,7 @@ program
   .option('--install', 'Install to AI agents after creation')
   .option('--install-agent <agents...>', 'Install to specific agents only (requires --install)')
   .option('--non-interactive', 'Non-interactive mode (requires mandatory flags)')
+  .option('--dry-run', 'Preview generated files without writing to disk')
   .action(initCommand);
 
 program

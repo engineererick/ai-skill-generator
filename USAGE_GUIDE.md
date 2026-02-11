@@ -128,6 +128,38 @@ skill-gen init \
   --desc "My enterprise API"
 ```
 
+### Preview Before Creating (Dry Run)
+
+```bash
+# See what files would be generated without writing anything
+skill-gen init \
+  --name my-api \
+  --type microservice \
+  --desc "API service" \
+  --with-references \
+  --with-scripts \
+  --non-interactive \
+  --dry-run
+```
+
+Output:
+```
+Preview (dry run):
+
+  my-api/
+  ├── SKILL.md (1.1 KB)
+  ├── references/API.md (349 B)
+  ├── references/ARCHITECTURE.md (337 B)
+  ├── scripts/seed.ts (274 B)
+  └── scripts/example.ts (123 B)
+
+  5 file(s), 2.1 KB total
+
+No files were written (dry-run mode)
+```
+
+Works with any combination of flags, presets, and templates. Remove `--dry-run` to create the files for real.
+
 ### Create and Install
 
 ```bash
@@ -212,17 +244,17 @@ Output:
 
 ### Supported Agents
 
-| Agent | Install Location |
-|-------|------------------|
-| Claude Code | `~/.claude/skills/` |
+| Agent | Install Location (project-level) |
+|-------|-----------------------------------|
+| Claude Code | `.claude/skills/` |
 | Cursor | `.cursor/skills/` |
 | VS Code / Copilot | `.github/skills/` |
-| Codex | `~/.codex/skills/` |
-| Goose | `~/.config/goose/skills/` |
-| OpenCode | `~/.opencode/skill/` |
-| Gemini CLI | `~/.gemini/skills/` |
-| Letta | `~/.letta/skills/` |
-| Amp | `~/.amp/skills/` |
+| Codex | `.agents/skills/` |
+| Goose | `.goose/skills/` |
+| OpenCode | `.opencode/skills/` |
+| Gemini CLI | `.gemini/skills/` |
+| Letta | `.skills/` |
+| Amp | `.agents/skills/` |
 
 ---
 
@@ -468,16 +500,17 @@ skill-gen package ./skills/utils-lib --output ./dist
 Run all tests:
 
 ```bash
-cd tests
-./run-all-tests.sh        # Linux/Mac
-./run-all-tests.ps1       # Windows
+npm test
 ```
 
 Run individual tests:
 
 ```bash
-cd tests/test1-basic-frontend
-./run-test.sh
+npm run test:frontend
+npm run test:microservice
+npm run test:library
+npm run test:context
+npm run test:preset
 ```
 
 ---

@@ -20,6 +20,7 @@ interface InitOptions {
   nonInteractive?: boolean;
   install?: boolean;
   installAgent?: string[];
+  dryRun?: boolean;
 }
 
 export async function initCommand(options: InitOptions) {
@@ -242,6 +243,21 @@ export async function initCommand(options: InitOptions) {
     // Create output directory
     const outputDir = path.resolve(options.output, data.name!);
 
+    // Generate content
+    const generated = generateSkillContent(
+      data as SkillData,
+      templateConfig,
+      contextFiles
+    );
+
+    // DRY RUN MODE
+    if (options.dryRun) {
+      console.log(chalk.cyan('\nPreview (dry run):\n'));
+      printFileTree(data.name!, generated, data);
+      console.log(chalk.yellow('\nNo files were written (dry-run mode)\n'));
+      return;
+    }
+
     // Check if already exists
     try {
       await fs.access(outputDir);
@@ -250,13 +266,6 @@ export async function initCommand(options: InitOptions) {
     } catch {
       // Does not exist, we can continue
     }
-
-    // Generate content
-    const generated = generateSkillContent(
-      data as SkillData,
-      templateConfig,
-      contextFiles
-    );
 
     // Create directory and write files
     await fs.mkdir(outputDir, { recursive: true });
@@ -390,4 +399,48 @@ async function shouldInstallPrompt(): Promise<boolean> {
     message: 'Install this skill to your AI agents?',
     default: false,
   });
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  return `${(bytes / 1024).toFixed(1)} KB`;
+}
+
+function printFileTree(
+  name: string,
+  generated: ReturnType<typeof generateSkillContent>,
+  data: Partial<SkillData>
+): void {
+  const lines: { label: string; size: number }[] = [];
+
+  lines.push({ label: 'SKILL.md', size: Buffer.byteLength(generated['SKILL.md'], 'utf8') });
+
+  const subdirs: { key: 'references/' | 'scripts/' | 'assets/'; flag: boolean | undefined }[] = [
+    { key: 'references/', flag: data.includeReferences },
+    { key: 'scripts/', flag: data.includeScripts },
+    { key: 'assets/', flag: data.includeAssets },
+  ];
+
+  for (const { key, flag } of subdirs) {
+    if (generated[key]) {
+      for (const [filename, content] of Object.entries(generated[key]!)) {
+        lines.push({ label: `${key}${filename}`, size: Buffer.byteLength(content, 'utf8') });
+      }
+    } else if (flag) {
+      lines.push({ label: `${key} (empty)`, size: 0 });
+    }
+  }
+
+  let totalSize = 0;
+  console.log(chalk.white(`  ${name}/`));
+
+  for (let i = 0; i < lines.length; i++) {
+    const isLast = i === lines.length - 1;
+    const connector = isLast ? '└── ' : '├── ';
+    const sizeStr = lines[i].size > 0 ? chalk.gray(` (${formatSize(lines[i].size)})`) : '';
+    console.log(chalk.white(`  ${connector}${lines[i].label}`) + sizeStr);
+    totalSize += lines[i].size;
+  }
+
+  console.log(chalk.gray(`\n  ${lines.length} file(s), ${formatSize(totalSize)} total`));
 }
