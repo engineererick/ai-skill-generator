@@ -1,7 +1,7 @@
 export interface Preset {
   name: string;
   description: string;
-  type: 'frontend' | 'microservice' | 'library' | 'basic';
+  type: string;
   options: Record<string, unknown>;
 }
 

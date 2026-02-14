@@ -7,17 +7,19 @@ import { packageCommand } from './commands/package.js';
 import { listTemplatesCommand } from './commands/list-templates.js';
 import { listPresetsCommand } from './commands/list-presets.js';
 import { installCommand } from './commands/install.js';
+import { buildTemplateCommand } from './commands/template.js';
+import { updateCommand } from './commands/update.js';
 
 program
   .name('skill-gen')
   .description('AI Skill Generator - Create skills for AI coding assistants')
-  .version('1.0.0');
+  .version('1.1.0');
 
 program
   .command('init')
   .description('Create a new skill from a template')
   .option('-n, --name <name>', 'Skill name (kebab-case)')
-  .option('-t, --type <type>', 'Skill type (microservice, frontend, library, basic)')
+  .option('-t, --type <type>', 'Skill type (api, fullstack, frontend, microservice, devops, library, basic, or custom template id)')
   .option('-o, --output <path>', 'Output directory', './skills')
   .option('-d, --desc <description>', 'Short description')
   .option('-p, --preset <preset>', 'Use a built-in preset')
@@ -84,5 +86,29 @@ program
   .alias('presets')
   .description('List built-in presets')
   .action(listPresetsCommand);
+
+program
+  .command('update')
+  .alias('u')
+  .description('Update an existing skill with new options')
+  .argument('<path>', 'Path to the skill directory to update')
+  .option('-n, --name <name>', 'Change skill name (kebab-case)')
+  .option('-d, --desc <description>', 'Change description')
+  .option('-t, --type <type>', 'Change template type (triggers full regeneration)')
+  .option('-c, --context <paths...>', 'Replace context files')
+  .option('--with-references', 'Enable references/ directory')
+  .option('--without-references', 'Disable references/ directory')
+  .option('--with-scripts', 'Enable scripts/ directory')
+  .option('--without-scripts', 'Disable scripts/ directory')
+  .option('--with-assets', 'Enable assets/ directory')
+  .option('--without-assets', 'Disable assets/ directory')
+  .option('--reinstall', 'Re-install to agents after update')
+  .option('--reinstall-agent <agents...>', 'Re-install to specific agents only')
+  .option('--non-interactive', 'Non-interactive mode (only apply changes from flags)')
+  .option('--dry-run', 'Preview changes without writing to disk')
+  .option('--no-backup', 'Skip backup creation before overwriting')
+  .action(updateCommand);
+
+program.addCommand(buildTemplateCommand());
 
 program.parse();

@@ -2,10 +2,15 @@ import { input, select, confirm, checkbox } from '@inquirer/prompts';
 import fs from 'fs/promises';
 import path from 'path';
 import chalk from 'chalk';
-import { generateSkillContent, SkillData, getTemplateChoices, getTemplateConfig } from '../templates/index.js';
+import { generateSkillContent, SkillData, getTemplateChoices } from '../templates/index.js';
+import { resolveTemplateConfig } from '../templates/configs/index.js';
 import { listPresets, getPreset, Preset } from '../presets/index.js';
 import { loadContextFiles, promptForContextFiles } from '../context-loaders/index.js';
 import { detectAgents, installToAllAgents, formatInstallResults } from '../agents/index.js';
+import { evaluateWhenExpression } from '../custom-templates/renderer.js';
+import { saveMetadata, getGeneratorVersion } from '../metadata/index.js';
+import type { SkillMetadata } from '../metadata/types.js';
+import { printFileTree, previewAndConfirm, highlightSkillMd } from './shared.js';
 
 interface InitOptions {
   name?: string;
@@ -112,8 +117,8 @@ export async function initCommand(options: InitOptions) {
       if (!data.type) {
         data.type = await select({
           message: 'Skill type?',
-          choices: getTemplateChoices(),
-        }) as SkillData['type'];
+          choices: await getTemplateChoices(),
+        }) as string;
       }
 
       // 4. Ask for description
@@ -125,18 +130,22 @@ export async function initCommand(options: InitOptions) {
       }
 
       // 5. Template-specific questions (skip if already set by preset)
-      const templateConfig = getTemplateConfig(data.type);
-      if (templateConfig) {
+      const earlyConfig = await resolveTemplateConfig(data.type!);
+      if (earlyConfig) {
         console.log(chalk.gray('\nTemplate configuration\n'));
 
-        for (const question of templateConfig.questions) {
+        for (const question of earlyConfig.questions) {
           if (data[question.name] !== undefined) {
             console.log(chalk.gray(`  ${question.message}: ${data[question.name]} (from preset)`));
             continue;
           }
 
-          if (question.when && !question.when(data)) {
-            continue;
+          // Handle when clause: function (built-in) or string (custom)
+          if (question.when) {
+            const shouldShow = typeof question.when === 'function'
+              ? question.when(data)
+              : evaluateWhenExpression(question.when, data);
+            if (!shouldShow) continue;
           }
 
           let answer: unknown;
@@ -211,12 +220,19 @@ export async function initCommand(options: InitOptions) {
       }
     }
 
-    // Validate type
-    const templateConfig = getTemplateConfig(data.type!);
+    // Validate type (check built-in + custom templates)
+    const templateConfig = await resolveTemplateConfig(data.type!);
     if (!templateConfig) {
       console.error(chalk.red(`Invalid skill type: ${data.type}`));
-      console.log(chalk.gray('Valid types: basic, microservice, frontend, library'));
+      console.log(chalk.gray('Valid types: api, fullstack, frontend, microservice, devops, library, basic, or any custom template id'));
       process.exit(1);
+    }
+
+    // Apply default values from template questions (for non-interactive or missing answers)
+    for (const question of templateConfig.questions) {
+      if (data[question.name] === undefined && question.default !== undefined) {
+        data[question.name] = question.default;
+      }
     }
 
     // Load context if provided
@@ -256,6 +272,15 @@ export async function initCommand(options: InitOptions) {
       printFileTree(data.name!, generated, data);
       console.log(chalk.yellow('\nNo files were written (dry-run mode)\n'));
       return;
+    }
+
+    // INTERACTIVE PREVIEW
+    if (!options.nonInteractive) {
+      const proceed = await previewAndConfirm(data.name!, generated, data);
+      if (!proceed) {
+        console.log(chalk.yellow('\nCancelado. No se escribieron archivos.\n'));
+        return;
+      }
     }
 
     // Check if already exists
@@ -305,6 +330,21 @@ export async function initCommand(options: InitOptions) {
     } else if (data.includeAssets) {
       await fs.mkdir(path.join(outputDir, 'assets'), { recursive: true });
     }
+
+    // Save generation metadata
+    const isCustom = 'isCustom' in templateConfig && templateConfig.isCustom === true;
+    const metadata: SkillMetadata = {
+      version: 1,
+      generatorVersion: await getGeneratorVersion(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      skillData: data as SkillData,
+      templateType: data.type!,
+      isCustomTemplate: isCustom,
+      preset: selectedPreset ? options.preset : undefined,
+      contextPaths: options.context,
+    };
+    await saveMetadata(outputDir, metadata);
 
     // Show summary
     console.log(chalk.green('\nSkill created successfully!\n'));
@@ -373,6 +413,13 @@ export async function initCommand(options: InitOptions) {
           const results = await installToAllAgents(outputDir, agentsToInstall);
           console.log(formatInstallResults(results));
           console.log();
+
+          // Update metadata with installed agents
+          const successfulAgents = results.filter(r => r.success).map(r => r.agent);
+          if (successfulAgents.length > 0) {
+            metadata.installedAgents = agentsToInstall.filter((_, i) => results[i]?.success);
+            await saveMetadata(outputDir, metadata);
+          }
         }
       }
     }
@@ -401,46 +448,3 @@ async function shouldInstallPrompt(): Promise<boolean> {
   });
 }
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  return `${(bytes / 1024).toFixed(1)} KB`;
-}
-
-function printFileTree(
-  name: string,
-  generated: ReturnType<typeof generateSkillContent>,
-  data: Partial<SkillData>
-): void {
-  const lines: { label: string; size: number }[] = [];
-
-  lines.push({ label: 'SKILL.md', size: Buffer.byteLength(generated['SKILL.md'], 'utf8') });
-
-  const subdirs: { key: 'references/' | 'scripts/' | 'assets/'; flag: boolean | undefined }[] = [
-    { key: 'references/', flag: data.includeReferences },
-    { key: 'scripts/', flag: data.includeScripts },
-    { key: 'assets/', flag: data.includeAssets },
-  ];
-
-  for (const { key, flag } of subdirs) {
-    if (generated[key]) {
-      for (const [filename, content] of Object.entries(generated[key]!)) {
-        lines.push({ label: `${key}${filename}`, size: Buffer.byteLength(content, 'utf8') });
-      }
-    } else if (flag) {
-      lines.push({ label: `${key} (empty)`, size: 0 });
-    }
-  }
-
-  let totalSize = 0;
-  console.log(chalk.white(`  ${name}/`));
-
-  for (let i = 0; i < lines.length; i++) {
-    const isLast = i === lines.length - 1;
-    const connector = isLast ? '└── ' : '├── ';
-    const sizeStr = lines[i].size > 0 ? chalk.gray(` (${formatSize(lines[i].size)})`) : '';
-    console.log(chalk.white(`  ${connector}${lines[i].label}`) + sizeStr);
-    totalSize += lines[i].size;
-  }
-
-  console.log(chalk.gray(`\n  ${lines.length} file(s), ${formatSize(totalSize)} total`));
-}

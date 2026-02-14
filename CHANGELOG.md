@@ -2,6 +2,24 @@
 
 All notable changes to the AI Skill Generator project.
 
+## [1.1.0] - 2026-02-14
+
+### Added
+- **3 new built-in templates**: REST API (`api`), Full-Stack App (`fullstack`), DevOps/Infrastructure (`devops`) — now 7 templates total
+- **Custom templates system**: Create reusable YAML templates with `skill-gen template create|list|validate`
+- **Interactive preview**: Syntax-highlighted SKILL.md preview with file tree before writing to disk
+- **`skill-gen update` command**: Update existing skills — change description, template options, or template type without recreating from scratch
+- **Metadata tracking**: `.skillgen.json` saved alongside each skill to enable updates and track generation parameters
+- **Adoption flow**: `update` works on legacy skills without metadata by parsing frontmatter and asking for template type
+- **Backup system**: Automatic backup before overwriting during updates (disable with `--no-backup`)
+- **Force overwrite for agents**: `installToAgent()` now supports `{ force: true }` for reinstallation
+
+### Changed
+- Shared utilities (`printFileTree`, `highlightSkillMd`, `previewAndConfirm`, `promptTemplateQuestions`) extracted to `src/commands/shared.ts`
+- `installToAllAgents()` now accepts optional `{ force: true }` parameter
+- Test suite expanded from 5 to 12 functional tests + 12 renderer unit tests
+- Updated README with all 7 templates, custom templates, update command documentation
+
 ## [1.0.2] - 2026-02-11
 
 ### Added

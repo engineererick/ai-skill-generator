@@ -1,0 +1,86 @@
+name: "Express API"
+description: "Node.js Express REST API with configurable database"
+
+questions:
+  - name: database
+    message: "Primary database?"
+    type: select
+    choices:
+      - name: PostgreSQL
+        value: postgres
+      - name: MongoDB
+        value: mongodb
+      - name: SQLite
+        value: sqlite
+    default: postgres
+  - name: useAuth
+    message: "Include authentication?"
+    type: confirm
+    default: true
+  - name: authMethod
+    message: "Auth method?"
+    type: select
+    when: "useAuth"
+    choices:
+      - name: JWT
+        value: jwt
+      - name: Session
+        value: session
+    default: jwt
+
+variables:
+  installCmd: "npm install express {{database}}"
+
+content:
+  SKILL.md: |
+    ---
+    name: {{name}}
+    description: |
+      {{description}}
+    ---
+
+    # {{titleCase}}
+
+    {{description}}
+
+    ## Stack
+
+    - **Runtime**: Node.js
+    - **Framework**: Express
+    - **Database**: {{database}}
+    {{#if useAuth}}
+    - **Auth**: {{authMethod}}
+    {{/if}}
+
+    ## Installation
+
+    ```bash
+    {{installCmd}}
+    ```
+
+    ## Structure
+
+    ```
+    src/
+      routes/
+      middleware/
+      models/
+      controllers/
+    ```
+
+    ---
+
+    **Generated with:** Skill Generator
+
+  references/:
+    API.md: |
+      # API Reference for {{titleCase}}
+
+      ## Endpoints
+
+      Document your {{database}} endpoints here.
+
+  scripts/:
+    seed.js: |
+      // Seed script for {{name}}
+      console.log('Seeding {{database}} database...');

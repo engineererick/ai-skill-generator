@@ -1,0 +1,23 @@
+name: "Test Template"
+description: "A valid test template"
+
+questions:
+  - name: framework
+    message: "Choose framework?"
+    type: select
+    choices:
+      - name: Express
+        value: express
+      - name: Fastify
+        value: fastify
+    default: express
+
+content:
+  SKILL.md: |
+    ---
+    name: {{name}}
+    description: |
+      {{description}}
+    ---
+    # {{titleCase}}
+    Framework: {{framework}}

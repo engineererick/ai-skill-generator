@@ -168,7 +168,8 @@ export async function detectAgents(): Promise<DetectedAgent[]> {
 
 export async function installToAgent(
   skillPath: string,
-  agentId: string
+  agentId: string,
+  options?: { force?: boolean }
 ): Promise<{ success: boolean; message: string }> {
   const agent = agents.find(a => a.id === agentId);
 
@@ -190,10 +191,14 @@ export async function installToAgent(
 
     try {
       await fs.access(targetPath);
-      return {
-        success: false,
-        message: `Skill already exists at ${targetPath}. Use --force to overwrite.`
-      };
+      if (!options?.force) {
+        return {
+          success: false,
+          message: `Skill already exists at ${targetPath}. Use --force to overwrite.`
+        };
+      }
+      // Force: remove existing before copying
+      await fs.rm(targetPath, { recursive: true, force: true });
     } catch {
       // Does not exist, we can continue
     }
@@ -214,7 +219,8 @@ export async function installToAgent(
 
 export async function installToAllAgents(
   skillPath: string,
-  specificAgents?: string[]
+  specificAgents?: string[],
+  options?: { force?: boolean }
 ): Promise<{ agent: string; success: boolean; message: string }[]> {
   const detected = await detectAgents();
   const results: { agent: string; success: boolean; message: string }[] = [];
@@ -224,7 +230,7 @@ export async function installToAllAgents(
     : detected.filter(a => a.installed);
 
   for (const agent of agentsToInstall) {
-    const result = await installToAgent(skillPath, agent.id);
+    const result = await installToAgent(skillPath, agent.id, options);
     results.push({
       agent: agent.name,
       success: result.success,

@@ -4,7 +4,7 @@ import { getTemplateChoices } from '../templates/index.js';
 export async function listTemplatesCommand() {
   console.log(chalk.gray('Available templates:\n'));
 
-  const templates = getTemplateChoices();
+  const templates = await getTemplateChoices();
 
   for (const template of templates) {
     console.log(chalk.cyan(`${template.value}`));

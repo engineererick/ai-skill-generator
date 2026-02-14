@@ -1,12 +1,14 @@
 # AI Skill Generator
 
-Create, validate, and package skills for AI coding assistants (Claude, Cursor, Copilot, Codex, and more). Configurable templates with external context support.
+Create, validate, and package skills for AI coding assistants (Claude, Cursor, Copilot, Codex, and more). 7 configurable templates, custom templates, interactive preview, and skill update support.
 
 ## Features
 
-- **4 Configurable templates**: Frontend, Microservice, Library, Basic
-- **Built-in presets**: Ready-to-use stacks
-- **Interactive mode**: Guided wizard with smart prompts
+- **7 Built-in templates**: REST API, Full-Stack, Frontend, Microservice, DevOps, Library, Basic
+- **Custom templates**: Create your own YAML templates with questions and variables
+- **Interactive preview**: Syntax-highlighted SKILL.md preview before writing to disk
+- **Skill updates**: Modify existing skills without recreating from scratch (`skill-gen update`)
+- **Built-in presets**: Ready-to-use technology stacks
 - **Dry run mode**: Preview generated files without writing to disk
 - **Automated mode**: Flags for CI/CD pipelines
 - **External context**: Include .md, .txt files as references
@@ -56,11 +58,23 @@ skill-gen init --preset modern-react --name my-skill --desc "My skill"
 ```bash
 skill-gen init \
   --name my-api \
-  --type microservice \
+  --type api \
   --desc "Payments API" \
   --with-references \
-  --with-scripts \
   --non-interactive
+```
+
+### Update an Existing Skill
+
+```bash
+# Interactive: choose what to update
+skill-gen update ./skills/my-api
+
+# Change description only
+skill-gen update ./skills/my-api --desc "New description" --non-interactive
+
+# Preview changes without writing
+skill-gen update ./skills/my-api --dry-run
 ```
 
 ### Preview Before Creating (Dry Run)
@@ -68,28 +82,11 @@ skill-gen init \
 ```bash
 skill-gen init \
   --name my-api \
-  --type microservice \
+  --type api \
   --desc "Payments API" \
   --with-references \
-  --with-scripts \
   --non-interactive \
   --dry-run
-```
-
-Output:
-```
-Preview (dry run):
-
-  my-api/
-  ├── SKILL.md (1.1 KB)
-  ├── references/API.md (349 B)
-  ├── references/ARCHITECTURE.md (337 B)
-  ├── scripts/seed.ts (274 B)
-  └── scripts/example.ts (123 B)
-
-  5 file(s), 2.1 KB total
-
-No files were written (dry-run mode)
 ```
 
 ### With External Context
@@ -105,17 +102,43 @@ skill-gen init \
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `init` | Create a new skill |
-| `validate <path>` | Validate SKILL.md structure |
-| `package <path>` | Create a .skill file (zip) |
-| `install <path>` | Install skill to AI agents |
-| `list-templates` | Show available templates |
-| `list-presets` | Show built-in presets |
-| `list-agents` | Show detected AI agents |
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `init` | | Create a new skill |
+| `update <path>` | `u` | Update an existing skill |
+| `validate <path>` | | Validate SKILL.md structure |
+| `package <path>` | | Create a .skill file (zip) |
+| `install <path>` | | Install skill to AI agents |
+| `list-templates` | `templates` | Show available templates |
+| `list-presets` | `presets` | Show built-in presets |
+| `list-agents` | `agents` | Show detected AI agents |
+| `template create` | `t create` | Scaffold a custom template |
+| `template list` | `t list` | List all templates (built-in + custom) |
+| `template validate` | `t validate` | Validate a custom template YAML |
 
 ## Templates
+
+### REST API
+
+Available options:
+- **Framework**: Express, Fastify, Hono, Koa
+- **Database**: PostgreSQL, MongoDB, SQLite, None
+- **ORM**: Prisma, Drizzle, Mongoose, None
+- **Auth**: JWT, Session, OAuth, None
+- **Validation**: Zod, Joi, Yup, None
+- **Documentation**: Swagger, None
+- **Testing**: Vitest, Jest, None
+
+### Full-Stack App
+
+Available options:
+- **Framework**: Next.js, Nuxt, Remix, SvelteKit
+- **Database**: PostgreSQL, MongoDB, SQLite
+- **ORM**: Prisma, Drizzle, Mongoose, TypeORM
+- **Auth**: Auth.js, Clerk, Lucia, None
+- **Styling**: Tailwind, CSS Modules, Styled Components
+- **State**: Zustand, Pinia, Jotai, None
+- **Testing**: Vitest+Playwright, Jest+Cypress, Vitest, None
 
 ### Frontend (Next.js)
 
@@ -137,6 +160,16 @@ Available options:
 - **Docs**: Swagger, Compodoc
 - **Extras**: Docker, Testing (Jest/Vitest)
 
+### DevOps / Infrastructure
+
+Available options:
+- **Containerization**: Docker, Podman, None
+- **Orchestration**: Kubernetes, Docker Compose, None
+- **CI/CD**: GitHub Actions, GitLab CI, Jenkins, None
+- **Cloud**: AWS, GCP, Azure, None
+- **IaC**: Terraform, Pulumi, CloudFormation, None
+- **Monitoring**: Prometheus+Grafana, Datadog, Cloud Native, None
+
 ### Library
 
 Template for shared utility libraries without framework dependencies.
@@ -144,6 +177,47 @@ Template for shared utility libraries without framework dependencies.
 ### Basic
 
 Minimal template for simple use cases.
+
+## Custom Templates
+
+Create your own reusable templates with YAML:
+
+```bash
+# Scaffold a new custom template
+skill-gen template create
+
+# List all templates (built-in + custom)
+skill-gen template list
+
+# Validate a custom template
+skill-gen template validate ./my-template.yaml
+```
+
+Templates can be saved globally (`~/.skill-generator/templates/`) or per-project (`.skill-generator/templates/`).
+
+## Update Command
+
+Update an existing skill's configuration without recreating from scratch:
+
+```bash
+skill-gen update <path> [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `-n, --name <name>` | Change skill name |
+| `-d, --desc <desc>` | Change description |
+| `-t, --type <type>` | Change template type (full regeneration) |
+| `-c, --context <paths...>` | Replace context files |
+| `--with-references` / `--without-references` | Toggle references/ |
+| `--with-scripts` / `--without-scripts` | Toggle scripts/ |
+| `--with-assets` / `--without-assets` | Toggle assets/ |
+| `--reinstall` | Re-install to agents after update |
+| `--non-interactive` | Only apply changes from flags |
+| `--dry-run` | Preview without writing |
+| `--no-backup` | Skip backup creation |
+
+The update command reads `.skillgen.json` metadata saved during `init` to know the original template and options. For skills created before metadata tracking, an adoption flow guides you through establishing a baseline.
 
 ## Presets
 
@@ -159,7 +233,7 @@ Minimal template for simple use cases.
 ```
 Options:
   -n, --name <name>           Skill name (kebab-case)
-  -t, --type <type>           Type: microservice, frontend, library, basic
+  -t, --type <type>           Type: api, fullstack, frontend, microservice, devops, library, basic
   -o, --output <path>         Output directory (default: ./skills)
   -d, --desc <description>    Short description
   -p, --preset <preset>       Use a built-in preset
@@ -195,15 +269,30 @@ skill-gen init --context ./docs/api.md --context ./docs/architecture/
 ```
 my-skill/
 ├── SKILL.md              # Main file with YAML frontmatter
+├── .skillgen.json        # Generation metadata (for updates)
 ├── references/           # Extended documentation (optional)
-│   ├── API.md
-│   ├── ARCHITECTURE.md
+│   ├── ENDPOINTS.md
+│   ├── MIDDLEWARE.md
 │   └── CONTEXT.md        # Included if external context was provided
 ├── scripts/              # Utilities (optional)
 │   ├── seed.ts
-│   └── example.ts
+│   └── deploy.sh
 └── assets/               # Resources (optional)
 ```
+
+## Supported AI Agents
+
+Skills can be installed to these AI coding assistants:
+
+- Claude Code
+- Cursor
+- VS Code / Copilot
+- Codex
+- Goose
+- OpenCode
+- Gemini CLI
+- Letta
+- Amp
 
 ## Development
 
@@ -211,47 +300,8 @@ my-skill/
 npm run watch    # Recompile on changes
 npm run clean    # Clean build
 npm run build    # Rebuild
-npm test         # Run all tests
+npm test         # Run all tests (12 functional + 12 renderer)
 ```
-
-## Examples
-
-### Create a skill with a modern preset
-
-```bash
-skill-gen init --preset modern-react --name customer-portal --desc "Customer portal"
-```
-
-### Create a skill with full configuration
-
-```bash
-skill-gen init \
-  --name reports-api \
-  --type microservice \
-  --desc "Report generation" \
-  --with-references \
-  --with-scripts \
-  --non-interactive
-```
-
-### Create a skill with external documentation
-
-```bash
-skill-gen init \
-  --name integration-service \
-  --type microservice \
-  --desc "Third-party integration" \
-  --context ./docs/integration-spec.md \
-  --context ./docs/api-contracts/ \
-  --with-references
-```
-
-## Roadmap
-
-- [ ] Custom presets (save user configurations)
-- [ ] Template plugins (extensible system)
-- [ ] Stricter SKILL.md validation
-- [ ] Export to other formats (JSON, YAML)
 
 ## License
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execSync } from 'node:child_process';
-import { existsSync, rmSync, readFileSync } from 'node:fs';
+import { existsSync, rmSync, readFileSync, mkdirSync, copyFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -58,6 +58,140 @@ const tests = {
       run(dir, `node ${cli} validate ./output/test-preset-skill`);
       assertContains(dir, 'output/test-preset-skill/SKILL.md', 'shadcn', 'shadcn/ui configuration');
       assertContains(dir, 'output/test-preset-skill/SKILL.md', 'zustand', 'Zustand configuration');
+    },
+  },
+  'test6-custom-template': {
+    title: 'Test 6: Custom Template Skill Generation',
+    run(dir) {
+      clean(dir, 'output');
+      // Copy template to .skill-generator/templates/ (project-level)
+      const templatesDir = resolve(dir, '.skill-generator', 'templates');
+      mkdirSync(templatesDir, { recursive: true });
+      copyFileSync(resolve(dir, 'templates', 'express-api.yaml'), resolve(templatesDir, 'express-api.yaml'));
+      // Generate skill using custom template
+      run(dir, `node ${cli} init --name my-express-api --type express-api --desc "My Express REST API" --output ./output --with-references --with-scripts --non-interactive`);
+      // Validate generated skill
+      run(dir, `node ${cli} validate ./output/my-express-api`);
+      // Verify content was rendered correctly
+      assertContains(dir, 'output/my-express-api/SKILL.md', 'Express', 'Express framework reference');
+      assertContains(dir, 'output/my-express-api/SKILL.md', 'postgres', 'Default database value');
+      assertContains(dir, 'output/my-express-api/SKILL.md', 'My Express Api', 'Title case name');
+      // Verify references and scripts were generated
+      assertFile(dir, 'output/my-express-api/references/API.md', 'Custom reference file');
+      assertFile(dir, 'output/my-express-api/scripts/seed.js', 'Custom script file');
+      assertContains(dir, 'output/my-express-api/references/API.md', 'postgres', 'Database in reference');
+      assertContains(dir, 'output/my-express-api/scripts/seed.js', 'postgres', 'Database in script');
+      // Cleanup project-level templates
+      rmSync(resolve(dir, '.skill-generator'), { recursive: true, force: true });
+    },
+  },
+  'test7-template-validate': {
+    title: 'Test 7: Template Validation',
+    run(dir) {
+      // Valid template should pass
+      run(dir, `node ${cli} template validate ./valid-template.yaml`);
+      console.log('  Valid template accepted');
+      // Invalid template should fail
+      let failed = false;
+      try {
+        run(dir, `node ${cli} template validate ./invalid-template.yaml`);
+      } catch {
+        failed = true;
+      }
+      if (!failed) {
+        throw new Error('Invalid template should have failed validation');
+      }
+      console.log('  Invalid template rejected');
+    },
+  },
+  'test8-template-list': {
+    title: 'Test 8: Template List with Custom Templates',
+    run(dir) {
+      // List templates (should show built-in ones)
+      run(dir, `node ${cli} template list`);
+      console.log('  Template list displayed');
+    },
+  },
+  'test9-api': {
+    title: 'Test 9: REST API Skill Generation',
+    run(dir) {
+      clean(dir, 'output');
+      run(dir, `node ${cli} init --name test-api-skill --type api --desc "A REST API for user management" --output ./output --with-references --non-interactive`);
+      run(dir, `node ${cli} validate ./output/test-api-skill`);
+      assertContains(dir, 'output/test-api-skill/SKILL.md', 'express', 'Default framework');
+      assertContains(dir, 'output/test-api-skill/SKILL.md', 'postgres', 'Default database');
+      assertContains(dir, 'output/test-api-skill/SKILL.md', 'jwt', 'Default auth');
+      assertDir(dir, 'output/test-api-skill/references', 'References directory');
+      assertFile(dir, 'output/test-api-skill/references/ENDPOINTS.md', 'Endpoints reference');
+      assertFile(dir, 'output/test-api-skill/references/MIDDLEWARE.md', 'Middleware reference');
+    },
+  },
+  'test10-fullstack': {
+    title: 'Test 10: Full-Stack Skill Generation',
+    run(dir) {
+      clean(dir, 'output');
+      run(dir, `node ${cli} init --name test-fullstack-skill --type fullstack --desc "A full-stack Next.js application" --output ./output --with-references --non-interactive`);
+      run(dir, `node ${cli} validate ./output/test-fullstack-skill`);
+      assertContains(dir, 'output/test-fullstack-skill/SKILL.md', 'Next.js', 'Default framework');
+      assertContains(dir, 'output/test-fullstack-skill/SKILL.md', 'prisma', 'Default ORM');
+      assertDir(dir, 'output/test-fullstack-skill/references', 'References directory');
+      assertFile(dir, 'output/test-fullstack-skill/references/DATABASE.md', 'Database reference');
+      assertFile(dir, 'output/test-fullstack-skill/references/AUTH.md', 'Auth reference');
+    },
+  },
+  'test11-devops': {
+    title: 'Test 11: DevOps Skill Generation',
+    run(dir) {
+      clean(dir, 'output');
+      run(dir, `node ${cli} init --name test-devops-skill --type devops --desc "Infrastructure and CI/CD for my project" --output ./output --with-references --with-scripts --non-interactive`);
+      run(dir, `node ${cli} validate ./output/test-devops-skill`);
+      assertContains(dir, 'output/test-devops-skill/SKILL.md', 'docker', 'Default containerization');
+      assertContains(dir, 'output/test-devops-skill/SKILL.md', 'github-actions', 'Default CI/CD');
+      assertDir(dir, 'output/test-devops-skill/references', 'References directory');
+      assertDir(dir, 'output/test-devops-skill/scripts', 'Scripts directory');
+      assertFile(dir, 'output/test-devops-skill/references/PIPELINE.md', 'Pipeline reference');
+      assertFile(dir, 'output/test-devops-skill/references/INFRASTRUCTURE.md', 'Infrastructure reference');
+      assertFile(dir, 'output/test-devops-skill/scripts/deploy.sh', 'Deploy script');
+    },
+  },
+  'test12-update-basic': {
+    title: 'Test 12: Update Skill (Basic)',
+    run(dir) {
+      clean(dir, 'output');
+      // 1. Create initial skill
+      run(dir, `node ${cli} init --name test-update-skill --type api --desc "Original description" --output ./output --with-references --non-interactive`);
+      // Verify .skillgen.json was created
+      assertFile(dir, 'output/test-update-skill/.skillgen.json', 'Metadata file');
+      // Verify original content
+      assertContains(dir, 'output/test-update-skill/SKILL.md', 'Original description', 'Original description');
+      // Verify metadata contents
+      const metaContent = readFileSync(resolve(dir, 'output/test-update-skill/.skillgen.json'), 'utf-8');
+      const meta = JSON.parse(metaContent);
+      if (meta.templateType !== 'api') throw new Error('Metadata templateType should be api');
+      if (meta.version !== 1) throw new Error('Metadata version should be 1');
+      console.log('  Metadata content valid');
+      // 2. Update skill with new description
+      run(dir, `node ${cli} update ./output/test-update-skill --desc "Updated description" --non-interactive --no-backup`);
+      // Verify updated content
+      assertContains(dir, 'output/test-update-skill/SKILL.md', 'Updated description', 'Updated description');
+      // Verify metadata was updated
+      const updatedMeta = JSON.parse(readFileSync(resolve(dir, 'output/test-update-skill/.skillgen.json'), 'utf-8'));
+      if (updatedMeta.skillData.description !== 'Updated description') throw new Error('Metadata description not updated');
+      if (updatedMeta.updatedAt === meta.createdAt) throw new Error('updatedAt should change');
+      console.log('  Metadata updated correctly');
+      // 3. Update with --dry-run (should not change files)
+      run(dir, `node ${cli} update ./output/test-update-skill --desc "Dry run desc" --non-interactive --dry-run`);
+      assertContains(dir, 'output/test-update-skill/SKILL.md', 'Updated description', 'Dry run did not modify');
+      // 4. Update with backup
+      run(dir, `node ${cli} update ./output/test-update-skill --desc "Final description" --non-interactive`);
+      assertContains(dir, 'output/test-update-skill/SKILL.md', 'Final description', 'Final description');
+      // Verify backup was created
+      const entries = readdirSync(resolve(dir, 'output'));
+      const backup = entries.find(e => e.startsWith('test-update-skill.backup-'));
+      if (!backup) throw new Error('Backup directory not created');
+      console.log('  Backup directory created');
+      // Validate the final skill
+      run(dir, `node ${cli} validate ./output/test-update-skill`);
     },
   },
 };
