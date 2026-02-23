@@ -2,6 +2,27 @@
 
 All notable changes to the AI Skill Generator project.
 
+## [1.2.0] - 2026-02-22
+
+### Added
+- **Auto-detect** (`skill-gen init --auto`): Scan project directory to detect template type and technology stack automatically
+  - Reads `package.json` dependencies (35+ npm packages mapped)
+  - Detects config files (`next.config.*`, `nest-cli.json`, `Dockerfile`, `prisma/schema.prisma`, etc.)
+  - Analyzes folder structure (`src/app/`, `src/modules/`, clean architecture patterns)
+  - Priority-based resolver: NestJS→microservice, Next.js+ORM→fullstack, Express→api, etc.
+  - Interactive: shows evidence and asks for confirmation; Non-interactive: applies detected values directly
+- **Import command** (`skill-gen import`): Convert existing AI instruction files into portable skills
+  - Import a specific file: `skill-gen import .cursorrules --name my-rules`
+  - Scan for all known files: `skill-gen import --scan`
+  - 8 supported formats: `.cursorrules`, `CLAUDE.md`, `.github/copilot-instructions.md`, `.windsurfrules`, `.goose/instructions.md`, `.gemini/instructions.md`, `codex.md`, `.amp/instructions.md`
+  - Strips existing frontmatter, derives name and description automatically
+  - Saves import metadata (`source`, `importSourceFormat`, `importSourceFile`)
+- Extended `SkillMetadata` with `autoDetected`, `source`, `importSourceFormat`, `importSourceFile` fields
+
+### Changed
+- Test suite expanded from 12 to 14 functional tests
+- Updated README with auto-detect and import documentation
+
 ## [1.1.0] - 2026-02-14
 
 ### Added

@@ -1,12 +1,14 @@
 # AI Skill Generator
 
-Create, validate, and package skills for AI coding assistants (Claude, Cursor, Copilot, Codex, and more). 7 configurable templates, custom templates, interactive preview, and skill update support.
+Create, validate, and package skills for AI coding assistants (Claude, Cursor, Copilot, Codex, and more). 7 configurable templates, custom templates, auto-detection, import from existing files, and skill update support.
 
 ## Features
 
 - **7 Built-in templates**: REST API, Full-Stack, Frontend, Microservice, DevOps, Library, Basic
 - **Custom templates**: Create your own YAML templates with questions and variables
 - **Interactive preview**: Syntax-highlighted SKILL.md preview before writing to disk
+- **Auto-detect**: Scan your project and auto-fill template options (`skill-gen init --auto`)
+- **Import**: Convert existing AI instruction files into skills (`skill-gen import`)
 - **Skill updates**: Modify existing skills without recreating from scratch (`skill-gen update`)
 - **Built-in presets**: Ready-to-use technology stacks
 - **Dry run mode**: Preview generated files without writing to disk
@@ -52,6 +54,31 @@ skill-gen list-presets
 # Use a preset
 skill-gen init --preset modern-react --name my-skill --desc "My skill"
 ```
+
+### Auto-detect Project
+
+```bash
+# Detect stack from current directory (interactive)
+cd my-nextjs-project
+skill-gen init --auto
+
+# Non-interactive: auto-detect + flags
+skill-gen init --auto --name my-skill --desc "My project skill" --non-interactive
+```
+
+Detects 35+ npm packages, config files, and folder patterns. Supports Next.js, NestJS, Express, Prisma, Tailwind, and many more.
+
+### Import Existing AI Instructions
+
+```bash
+# Import a .cursorrules or CLAUDE.md file
+skill-gen import .cursorrules --name my-rules
+
+# Scan for all known AI instruction files in current directory
+skill-gen import --scan
+```
+
+Supported formats: `.cursorrules`, `CLAUDE.md`, `.github/copilot-instructions.md`, `.windsurfrules`, `.goose/instructions.md`, `.gemini/instructions.md`, `codex.md`, `.amp/instructions.md`.
 
 ### With Flags (Automation)
 
@@ -105,6 +132,7 @@ skill-gen init \
 | Command | Alias | Description |
 |---------|-------|-------------|
 | `init` | | Create a new skill |
+| `import [file]` | `i` | Import an AI instruction file as a skill |
 | `update <path>` | `u` | Update an existing skill |
 | `validate <path>` | | Validate SKILL.md structure |
 | `package <path>` | | Create a .skill file (zip) |
@@ -234,6 +262,7 @@ The update command reads `.skillgen.json` metadata saved during `init` to know t
 Options:
   -n, --name <name>           Skill name (kebab-case)
   -t, --type <type>           Type: api, fullstack, frontend, microservice, devops, library, basic
+  -a, --auto                  Auto-detect project type and technologies
   -o, --output <path>         Output directory (default: ./skills)
   -d, --desc <description>    Short description
   -p, --preset <preset>       Use a built-in preset
@@ -245,6 +274,19 @@ Options:
   --install-agent <agents>    Install to specific agents only
   --non-interactive           Automated mode (requires flags)
   --dry-run                   Preview files without writing to disk
+```
+
+## Import Options
+
+```
+Options:
+  --scan                      Scan current directory for known AI instruction files
+  -n, --name <name>           Override skill name
+  -d, --desc <desc>           Override description
+  -o, --output <path>         Output directory (default: ./skills)
+  --install                   Install to AI agents after import
+  --non-interactive           Automated mode
+  --dry-run                   Preview without writing
 ```
 
 ## External Context
@@ -300,7 +342,7 @@ Skills can be installed to these AI coding assistants:
 npm run watch    # Recompile on changes
 npm run clean    # Clean build
 npm run build    # Rebuild
-npm test         # Run all tests (12 functional + 12 renderer)
+npm test         # Run all tests (14 functional + 12 renderer)
 ```
 
 ## License
