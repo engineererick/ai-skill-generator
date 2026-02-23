@@ -10,6 +10,7 @@ import { detectAgents, installToAllAgents, formatInstallResults } from '../agent
 import { evaluateWhenExpression } from '../custom-templates/renderer.js';
 import { saveMetadata, getGeneratorVersion } from '../metadata/index.js';
 import type { SkillMetadata } from '../metadata/types.js';
+import { detectProject } from '../detection/index.js';
 import { printFileTree, previewAndConfirm, highlightSkillMd } from './shared.js';
 
 interface InitOptions {
@@ -26,6 +27,7 @@ interface InitOptions {
   install?: boolean;
   installAgent?: string[];
   dryRun?: boolean;
+  auto?: boolean;
 }
 
 export async function initCommand(options: InitOptions) {
@@ -42,6 +44,63 @@ export async function initCommand(options: InitOptions) {
     };
 
     let selectedPreset: Preset | undefined;
+    let autoDetected = false;
+
+    // AUTO-DETECT MODE
+    if (options.auto) {
+      console.log(chalk.gray('Detectando proyecto...\n'));
+      const detected = await detectProject(process.cwd());
+
+      if (detected.evidence.length === 0) {
+        console.log(chalk.yellow('No se detectaron tecnologias en el directorio actual.\n'));
+      } else {
+        autoDetected = true;
+
+        // Show detection results
+        console.log(chalk.green(`Tipo detectado: ${chalk.bold(detected.type)} (${Math.round(detected.confidence * 100)}% confianza)\n`));
+
+        if (detected.evidence.length > 0) {
+          console.log(chalk.gray('Evidencia:'));
+          for (const ev of detected.evidence.slice(0, 10)) {
+            console.log(chalk.gray(`  ${ev.source} → ${ev.implies}`));
+          }
+          if (detected.evidence.length > 10) {
+            console.log(chalk.gray(`  ... y ${detected.evidence.length - 10} mas`));
+          }
+          console.log();
+        }
+
+        if (detected.warnings.length > 0) {
+          for (const w of detected.warnings) {
+            console.log(chalk.yellow(`  ⚠ ${w}`));
+          }
+          console.log();
+        }
+
+        // In interactive mode, ask to confirm
+        if (!options.nonInteractive) {
+          const useDetected = await confirm({
+            message: 'Usar configuracion detectada?',
+            default: true,
+          });
+
+          if (useDetected) {
+            data.type = detected.type;
+            Object.assign(data, detected.answers);
+          }
+          // If user says no, fall through to normal interactive flow
+        } else {
+          // Non-interactive: use detected values directly
+          data.type = data.type || detected.type;
+          // Only fill in answers that weren't explicitly provided via CLI
+          for (const [key, value] of Object.entries(detected.answers)) {
+            if (data[key] === undefined) {
+              data[key] = value;
+            }
+          }
+        }
+      }
+    }
 
     // NON-INTERACTIVE MODE
     if (options.nonInteractive) {
@@ -57,7 +116,11 @@ export async function initCommand(options: InitOptions) {
       }
 
       if (!data.name || !data.type || !data.description) {
-        console.error(chalk.red('Non-interactive mode requires: --name, --type (or --preset), --desc'));
+        const missing: string[] = [];
+        if (!data.name) missing.push('--name');
+        if (!data.type) missing.push('--type (or --preset or --auto)');
+        if (!data.description) missing.push('--desc');
+        console.error(chalk.red(`Non-interactive mode requires: ${missing.join(', ')}`));
         process.exit(1);
       }
 
@@ -343,6 +406,7 @@ export async function initCommand(options: InitOptions) {
       isCustomTemplate: isCustom,
       preset: selectedPreset ? options.preset : undefined,
       contextPaths: options.context,
+      autoDetected: autoDetected || undefined,
     };
     await saveMetadata(outputDir, metadata);
 

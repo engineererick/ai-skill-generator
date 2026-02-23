@@ -1,0 +1,22 @@
+# Cursor Rules
+
+This project uses TypeScript with strict mode enabled.
+
+## Code Style
+
+- Use functional components with hooks
+- Prefer const over let
+- Use arrow functions for callbacks
+- Always type function parameters and return values
+
+## Architecture
+
+Follow the feature-based folder structure:
+- src/features/ for feature modules
+- src/shared/ for shared utilities
+- src/types/ for TypeScript interfaces
+
+## Testing
+
+Write unit tests for all utility functions using Vitest.
+Use React Testing Library for component tests.

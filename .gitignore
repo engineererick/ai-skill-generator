@@ -3,9 +3,10 @@ dist/
 *.tgz
 .env
 .env.*
-CLAUDE.md
+/CLAUDE.md
 .claude/
 tests/**/output/
+tests/**/output-scan/
 tests/**/packages/
 skills/
 .skill-generator/

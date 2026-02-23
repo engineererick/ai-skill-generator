@@ -1,6 +1,6 @@
 {
   "name": "ai-skill-generator",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "AI assistant skill generator. Create, validate, and package skills with configurable templates.",
   "main": "dist/index.js",
   "bin": {
@@ -34,6 +34,8 @@
     "test:fullstack": "node tests/run-test.mjs test10-fullstack",
     "test:devops": "node tests/run-test.mjs test11-devops",
     "test:update": "node tests/run-test.mjs test12-update-basic",
+    "test:auto-detect": "node tests/run-test.mjs test13-auto-detect",
+    "test:import": "node tests/run-test.mjs test14-import",
     "test:renderer": "npx tsx tests/test-renderer.ts"
   },
   "keywords": [

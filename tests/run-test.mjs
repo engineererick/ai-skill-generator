@@ -194,6 +194,52 @@ const tests = {
       run(dir, `node ${cli} validate ./output/test-update-skill`);
     },
   },
+  'test13-auto-detect': {
+    title: 'Test 13: Auto-detect Project Type',
+    run(dir) {
+      clean(dir, 'output');
+      const projectDir = resolve(dir, 'project');
+      // Generate skill with --auto from the simulated project directory
+      run(projectDir, `node ${cli} init --auto --name test-auto-skill --desc "Auto-detected skill" --output ${resolve(dir, 'output')} --non-interactive`);
+      // Validate
+      run(dir, `node ${cli} validate ./output/test-auto-skill`);
+      // Verify fullstack type was detected (Next.js + Prisma)
+      assertContains(dir, 'output/test-auto-skill/SKILL.md', 'Next.js', 'Detected Next.js framework');
+      assertContains(dir, 'output/test-auto-skill/SKILL.md', 'prisma', 'Detected Prisma ORM');
+      // Verify metadata
+      const metaContent = readFileSync(resolve(dir, 'output/test-auto-skill/.skillgen.json'), 'utf-8');
+      const meta = JSON.parse(metaContent);
+      if (meta.templateType !== 'fullstack') throw new Error(`Expected templateType=fullstack, got ${meta.templateType}`);
+      if (meta.autoDetected !== true) throw new Error('Expected autoDetected=true');
+      console.log('  Metadata: fullstack + autoDetected');
+    },
+  },
+  'test14-import': {
+    title: 'Test 14: Import AI Instruction Files',
+    run(dir) {
+      clean(dir, 'output');
+      clean(dir, 'output-scan');
+      // 1. Import a specific .cursorrules file
+      run(dir, `node ${cli} import ./fixtures/.cursorrules --name imported-cursor --desc "Imported from Cursor" --output ./output --non-interactive`);
+      run(dir, `node ${cli} validate ./output/imported-cursor`);
+      assertContains(dir, 'output/imported-cursor/SKILL.md', 'imported-cursor', 'Skill name in frontmatter');
+      // Verify metadata
+      const metaContent = readFileSync(resolve(dir, 'output/imported-cursor/.skillgen.json'), 'utf-8');
+      const meta = JSON.parse(metaContent);
+      if (meta.source !== 'imported') throw new Error('Metadata source should be imported');
+      if (meta.importSourceFormat !== 'cursorrules') throw new Error('Metadata should have cursorrules format');
+      console.log('  Import metadata valid');
+      // Verify content was preserved
+      assertContains(dir, 'output/imported-cursor/SKILL.md', 'functional components', 'Content preserved');
+      // 2. Import with --scan from fixtures directory (which has .cursorrules and CLAUDE.md)
+      run(resolve(dir, 'fixtures'), `node ${cli} import --scan --output ${resolve(dir, 'output-scan')} --non-interactive`);
+      assertDir(dir, 'output-scan/cursor-rules', 'Cursor rules skill from scan');
+      assertDir(dir, 'output-scan/claude-instructions', 'Claude instructions skill from scan');
+      // Validate scan results
+      run(dir, `node ${cli} validate ./output-scan/cursor-rules`);
+      run(dir, `node ${cli} validate ./output-scan/claude-instructions`);
+    },
+  },
 };
 
 // --- helpers ---

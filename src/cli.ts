@@ -9,17 +9,19 @@ import { listPresetsCommand } from './commands/list-presets.js';
 import { installCommand } from './commands/install.js';
 import { buildTemplateCommand } from './commands/template.js';
 import { updateCommand } from './commands/update.js';
+import { importCommand } from './commands/import.js';
 
 program
   .name('skill-gen')
   .description('AI Skill Generator - Create skills for AI coding assistants')
-  .version('1.1.0');
+  .version('1.2.0');
 
 program
   .command('init')
   .description('Create a new skill from a template')
   .option('-n, --name <name>', 'Skill name (kebab-case)')
   .option('-t, --type <type>', 'Skill type (api, fullstack, frontend, microservice, devops, library, basic, or custom template id)')
+  .option('-a, --auto', 'Auto-detect project type and technologies from current directory')
   .option('-o, --output <path>', 'Output directory', './skills')
   .option('-d, --desc <description>', 'Short description')
   .option('-p, --preset <preset>', 'Use a built-in preset')
@@ -108,6 +110,20 @@ program
   .option('--dry-run', 'Preview changes without writing to disk')
   .option('--no-backup', 'Skip backup creation before overwriting')
   .action(updateCommand);
+
+program
+  .command('import')
+  .alias('i')
+  .description('Import an existing AI instruction file as a skill')
+  .argument('[file]', 'Path to the instruction file to import')
+  .option('--scan', 'Scan current directory for known AI instruction files')
+  .option('-n, --name <name>', 'Override skill name')
+  .option('-d, --desc <desc>', 'Override description')
+  .option('-o, --output <path>', 'Output directory', './skills')
+  .option('--install', 'Install to AI agents after import')
+  .option('--non-interactive', 'Non-interactive mode')
+  .option('--dry-run', 'Preview without writing')
+  .action(importCommand);
 
 program.addCommand(buildTemplateCommand());
 

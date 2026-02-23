@@ -30,4 +30,16 @@ export interface SkillMetadata {
 
   /** Agent IDs the skill was installed to */
   installedAgents?: string[];
+
+  /** Whether auto-detect was used during creation */
+  autoDetected?: boolean;
+
+  /** Source of this skill: 'generated' or 'imported' */
+  source?: 'generated' | 'imported';
+
+  /** For imported skills: the source format id */
+  importSourceFormat?: string;
+
+  /** For imported skills: the original file path */
+  importSourceFile?: string;
 }
